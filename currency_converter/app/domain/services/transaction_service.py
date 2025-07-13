@@ -20,7 +20,5 @@ class TransactionService:
         return self.transaction_repository.save(transaction)
 
     def get_transactions(self, user_id: int) -> List[Transaction]:
-        return self.transaction_repository.find_by_user_id(user_id)
-
-    def get_transaction_by_id(self, transaction_id: int) -> Optional[Transaction]:
-        return self.transaction_repository.find_by_id(transaction_id)
+        transactions = self.transaction_repository.get_by_user_id(user_id)
+        return [Transaction.from_orm(db_tr) for db_tr in transactions]

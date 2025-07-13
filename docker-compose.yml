@@ -1,0 +1,30 @@
+services:
+  db:
+    image: postgres:15
+    restart: always
+    environment:
+      POSTGRES_USER: currency_user
+      POSTGRES_PASSWORD: currency_pass
+      POSTGRES_DB: currency_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  app:
+    build: .
+    command: >
+      sh -c "alembic -c currency_converter/alembic.ini upgrade head && uvicorn currency_converter.app.main:app --host 0.0.0.0 --port 8000 --reload"
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql://currency_user:currency_pass@db:5432/currency_db
+      CURRENCY_API_KEY: cur_live_DOjRKrVtI643qNaKji9FvkJwmoFEVU31XmtZlxP1
+      CURRENCY_API_URL: https://app.currencyapi.com/
+    depends_on:
+      - db
+
+volumes:
+  pgdata:

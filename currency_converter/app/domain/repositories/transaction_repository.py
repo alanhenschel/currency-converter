@@ -12,8 +12,3 @@ class TransactionRepository(ABC):
     def get_by_user_id(self, user_id: int) -> List[Transaction]:
         """Retrieve transactions for a specific user by user ID."""
         pass
-
-    @abstractmethod
-    def get_all(self) -> List[Transaction]:
-        """Retrieve all transactions."""
-        pass

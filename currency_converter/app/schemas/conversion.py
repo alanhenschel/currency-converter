@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Optional
+from typing import Any, Dict, Optional
 
 class ConversionRequest(BaseModel):
     from_currency: str
@@ -14,3 +14,15 @@ class ConversionResponse(BaseModel):
     to_value: float
     rate: float
     timestamp: str
+    
+class ExchangeRateData(BaseModel):
+    code: str
+    value: float
+
+class ExchangeRateResponse(BaseModel):
+    meta: Dict[str, Any]
+    data: Dict[str, ExchangeRateData]
+
+    @property
+    def last_updated_at(self) -> Optional[str]:
+        return self.meta.get("last_updated_at")

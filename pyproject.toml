@@ -5,6 +5,9 @@ description = "A FastAPI application for converting currencies and managing tran
 authors = ["Your Name <your.email@example.com>"]
 license = "MIT"
 
+[[tool.poetry.packages]]
+include = "currency_converter"
+
 [tool.poetry.dependencies]
 python = "^3.10"
 fastapi = "^0.75.0"
@@ -17,6 +20,8 @@ pytest = "^7.0"
 loguru = "^0.5.3"
 requests = "^2.31.0"
 python-dotenv = "^1.1.1"
+psycopg2-binary = "^2.9.9"
+currencyapicom = "^0.1.1"
 
 [tool.poetry.group.dev.dependencies]
 black = "^22.3.0"

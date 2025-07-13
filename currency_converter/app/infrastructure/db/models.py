@@ -15,9 +15,3 @@ class Transaction(Base):
     to_value = Column(Float, nullable=False)
     rate = Column(Float, nullable=False)
     timestamp = Column(DateTime, default=datetime.utcnow)
-
-class Currency(Base):
-    __tablename__ = 'currencies'
-
-    code = Column(String(3), primary_key=True, index=True)
-    name = Column(String, nullable=False)

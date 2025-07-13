@@ -1,26 +1,26 @@
 from typing import Dict, Any
-import requests
+from currencyapicom import Client
+from currency_converter.app.schemas.conversion import ConversionRequest
+from currency_converter.app.exceptions import ConversionErrorException, CurrencyNotFoundException
 
 class CurrencyAPI:
-    BASE_URL = "https://api.currencyapi.com/v3"
-
     def __init__(self, api_key: str):
-        self.api_key = api_key
+        self.client = Client(api_key)
 
-    def get_exchange_rate(self, from_currency: str, to_currency: str) -> Dict[str, Any]:
-        endpoint = f"{self.BASE_URL}/convert"
-        params = {
-            "apikey": self.api_key,
-            "from": from_currency,
-            "to": to_currency,
-            "amount": 1
-        }
-        response = requests.get(endpoint, params=params)
-        response.raise_for_status()
-        return response.json()
+    def get_exchange_rate(self, conversion_request: ConversionRequest) -> float:
+        try:
+            result = self.client.latest(
+                base_currency=conversion_request.from_currency,
+                currencies=[conversion_request.to_currency]
+            )
+            if not result or conversion_request.to_currency not in result['data']:
+                raise CurrencyNotFoundException(conversion_request.to_currency)
+            return result['data'][conversion_request.to_currency]['value']
+        except Exception as e:
+            raise ConversionErrorException(f"Unexpected error: {str(e)}")
 
     def get_supported_currencies(self) -> Dict[str, Any]:
-        endpoint = f"{self.BASE_URL}/currencies"
-        response = requests.get(endpoint)
-        response.raise_for_status()
-        return response.json()
+        try:
+            return self.client.currencies()
+        except Exception as e:
+            raise ConversionErrorException(f"Unexpected error: {str(e)}")

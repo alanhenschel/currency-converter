@@ -5,11 +5,9 @@ from .core.config import settings
 
 app = FastAPI(title="Currency Converter API", version="1.0")
 
-# Include routers
 app.include_router(conversion.router, prefix="/api/v1/conversion", tags=["Conversion"])
 app.include_router(transactions.router, prefix="/api/v1/transactions", tags=["Transactions"])
 
-# Add middleware
 add_middleware(app)
 
 @app.get("/")

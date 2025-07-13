@@ -1,0 +1,71 @@
+# .gitignore para projetos Python/FastAPI
+
+# Byte-compiled / cache / logs
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.log
+
+# Virtual environments
+.env/
+.venv/
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Poetry
+poetry.lock
+
+# VSCode
+.vscode/
+
+# Pytest
+.cache/
+.pytest_cache/
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Coverage
+htmlcov/
+.tox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+
+# Jupyter
+.ipynb_checkpoints
+
+# Alembic
+alembic/versions/*.pyc
+
+# Database
+*.sqlite3
+*.db
+
+# Environment/config
+.env
+.env.*
+
+# Docker
+*.pid
+*.pid.lock
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build
+build/
+dist/
+*.egg-info/
+.eggs/

@@ -1,11 +1,12 @@
 from datetime import datetime
 from pydantic import BaseModel
+from typing import Optional
 from currency_converter.app.infrastructure.db.models import Transaction as TransactionORM
 
 
 class Transaction(BaseModel):
     user_id: int
-    transaction_id: int
+    transaction_id: Optional[int]
     from_currency: str
     to_currency: str
     from_value: float

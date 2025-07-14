@@ -1,7 +1,6 @@
 from fastapi import FastAPI
 from .api.routers import conversion, transactions
 from .api.middlewares import add_middleware
-from .core.config import settings
 
 app = FastAPI(title="Currency Converter API", version="1.0")
 

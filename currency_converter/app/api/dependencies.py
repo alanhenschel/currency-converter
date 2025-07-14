@@ -15,13 +15,14 @@ def get_transaction_repository(db: Session = Depends(get_db)) -> TransactionRepo
 def get_currency_api() -> CurrencyAPI:
     return CurrencyAPI(settings.currency_api_key)
 
-def get_conversion_service(
-    transaction_repository: TransactionRepository = Depends(get_transaction_repository),
-    currency_api: CurrencyAPI = Depends(get_currency_api),
-) -> ConversionService:
-    return ConversionService(transaction_repository, currency_api)
-
 def get_transaction_service(
     transaction_repository: TransactionRepository = Depends(get_transaction_repository),
 ) -> TransactionService:
     return TransactionService(transaction_repository)
+
+def get_conversion_service(
+    transaction_repository: TransactionRepository = Depends(get_transaction_repository),
+    currency_api: CurrencyAPI = Depends(get_currency_api),
+    transaction_service: TransactionService = Depends(get_transaction_service)
+) -> ConversionService:
+    return ConversionService(transaction_repository, currency_api, transaction_service)

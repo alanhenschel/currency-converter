@@ -13,9 +13,12 @@ class CurrencyAPI:
                 base_currency=conversion_request.from_currency,
                 currencies=[conversion_request.to_currency]
             )
-            if not result or conversion_request.to_currency not in result['data']:
+            if not result or 'data' not in result or conversion_request.to_currency not in result['data']:
                 raise CurrencyNotFoundException(conversion_request.to_currency)
             return result['data'][conversion_request.to_currency]['value']
+        except CurrencyNotFoundException:
+            # Re-raise without wrapping
+            raise
         except Exception as e:
             raise ConversionErrorException(f"Unexpected error: {str(e)}")
 

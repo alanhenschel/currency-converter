@@ -17,10 +17,10 @@ client = TestClient(app)
 
 
 class TestConversionAPI:
-    """Testes unitários isolados para a API de conversão de moedas."""
+    """Isolated unit tests for the currency conversion API."""
 
     def test_convert_currency_success(self):
-        """Testa conversão bem-sucedida de moeda."""
+        """Test successful currency conversion."""
         # Arrange
         mock_service = Mock()
         mock_transaction = Transaction(
@@ -56,7 +56,7 @@ class TestConversionAPI:
             assert data["transaction_id"] == 1
             assert "timestamp" in data
             
-            # Verifica se o serviço foi chamado corretamente
+            # Verify that the service was called correctly
             mock_service.convert.assert_called_once()
             call_args = mock_service.convert.call_args[0][0]
             assert call_args.from_currency == "USD"
@@ -67,7 +67,7 @@ class TestConversionAPI:
             app.dependency_overrides.clear()
 
     def test_convert_currency_validation_service_exception(self):
-        """Testa exceção de validação do serviço."""
+        """Test service validation exception."""
         # Arrange
         mock_service = Mock()
         mock_service.convert.side_effect = ValidationServiceException("Amount must be greater than zero")
@@ -90,7 +90,7 @@ class TestConversionAPI:
             app.dependency_overrides.clear()
 
     def test_convert_currency_not_found_exception(self):
-        """Testa exceção de moeda não encontrada."""
+        """Test currency not found exception."""
         # Arrange
         mock_service = Mock()
         mock_service.convert.side_effect = CurrencyNotFoundException("Currency XYZ not found")
@@ -113,7 +113,7 @@ class TestConversionAPI:
             app.dependency_overrides.clear()
 
     def test_convert_currency_conversion_error(self):
-        """Testa erro durante conversão."""
+        """Test error during conversion."""
         # Arrange
         mock_service = Mock()
         mock_service.convert.side_effect = ConversionErrorException("API rate limit exceeded")
@@ -136,7 +136,7 @@ class TestConversionAPI:
             app.dependency_overrides.clear()
 
     def test_convert_currency_unexpected_error(self):
-        """Testa erro inesperado."""
+        """Test unexpected error."""
         # Arrange
         mock_service = Mock()
         mock_service.convert.side_effect = Exception("Unexpected database error")
@@ -159,7 +159,7 @@ class TestConversionAPI:
             app.dependency_overrides.clear()
 
     def test_convert_currency_missing_fields(self):
-        """Testa requisição com campos obrigatórios faltando."""
+        """Test request with missing required fields."""
         # Act
         response = client.post(
             "/api/v1/conversion",
@@ -171,7 +171,7 @@ class TestConversionAPI:
         assert "detail" in response.json()
 
     def test_convert_currency_invalid_json(self):
-        """Testa requisição com JSON inválido."""
+        """Test request with invalid JSON."""
         # Act
         response = client.post(
             "/api/v1/conversion",
@@ -183,7 +183,7 @@ class TestConversionAPI:
         assert "detail" in response.json()
 
     def test_convert_currency_invalid_amount_validation(self):
-        """Testa validação de valor inválido (zero) que deveria ser rejeitado pelo serviço."""
+        """Test validation of invalid amount value that should be rejected by service."""
         # Arrange
         mock_service = Mock()
         mock_service.convert.side_effect = ValidationServiceException("Amount must be greater than zero")

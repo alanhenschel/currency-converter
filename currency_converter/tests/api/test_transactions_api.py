@@ -12,10 +12,10 @@ client = TestClient(app)
 
 
 class TestTransactionsAPI:
-    """Testes unitários isolados para a API de transações."""
+    """Isolated unit tests for the transactions API."""
 
     def test_get_transactions_success(self):
-        """Testa busca bem-sucedida de transações do usuário."""
+        """Test successful retrieval of user transactions."""
         # Arrange
         mock_service = Mock()
         mock_transactions = [
@@ -60,14 +60,14 @@ class TestTransactionsAPI:
             assert data[1]["from_currency"] == "EUR"
             assert data[1]["to_currency"] == "USD"
             
-            # Verifica se o serviço foi chamado corretamente
+            # Verify that the service was called correctly
             mock_service.get_transactions.assert_called_once_with(123)
         finally:
             # Clean up
             app.dependency_overrides.clear()
 
     def test_get_transactions_empty_list(self):
-        """Testa busca de transações quando o usuário não tem transações."""
+        """Test transaction retrieval when user has no transactions."""
         # Arrange
         mock_service = Mock()
         mock_service.get_transactions.return_value = []
@@ -85,14 +85,14 @@ class TestTransactionsAPI:
             assert len(data) == 0
             assert data == []
             
-            # Verifica se o serviço foi chamado corretamente
+            # Verify that the service was called correctly
             mock_service.get_transactions.assert_called_once_with(456)
         finally:
             # Clean up
             app.dependency_overrides.clear()
 
     def test_get_transactions_service_exception(self):
-        """Testa erro do serviço ao buscar transações."""
+        """Test service error when retrieving transactions."""
         # Arrange
         mock_service = Mock()
         mock_service.get_transactions.side_effect = ServiceException("Database connection failed")
@@ -112,7 +112,7 @@ class TestTransactionsAPI:
             app.dependency_overrides.clear()
 
     def test_get_transactions_unexpected_error(self):
-        """Testa erro inesperado ao buscar transações."""
+        """Test unexpected error when retrieving transactions."""
         # Arrange
         mock_service = Mock()
         mock_service.get_transactions.side_effect = Exception("Unexpected error")
@@ -132,7 +132,7 @@ class TestTransactionsAPI:
             app.dependency_overrides.clear()
 
     def test_get_transactions_invalid_user_id(self):
-        """Testa requisição com user_id inválido."""
+        """Test request with invalid user_id."""
         # Act
         response = client.get("/api/v1/transactions?userId=invalid")
 
@@ -141,7 +141,7 @@ class TestTransactionsAPI:
         assert "detail" in response.json()
 
     def test_get_transactions_negative_user_id(self):
-        """Testa requisição com user_id negativo."""
+        """Test request with negative user_id."""
         # Arrange
         mock_service = Mock()
         mock_service.get_transactions.side_effect = ServiceException("Invalid user ID")

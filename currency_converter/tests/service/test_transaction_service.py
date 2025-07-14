@@ -9,15 +9,15 @@ from currency_converter.app.exceptions import ServiceException
 
 
 class TestTransactionService:
-    """Testes unitários isolados para o serviço de transações."""
+    """Testes unitários isolados para o serviço transactions."""
 
     def setup_method(self):
-        """Setup executado antes de cada teste."""
+        """Setup executed before each test."""
         self.mock_transaction_repository = Mock()
         self.service = TransactionService(self.mock_transaction_repository)
 
     def test_record_transaction_success(self):
-        """Testa gravação bem-sucedida de uma transação."""
+        """Test gravação successful of a transaction."""
         # Arrange
         transaction = Transaction(
             user_id=123,
@@ -50,7 +50,7 @@ class TestTransactionService:
         # Assert
         assert result == saved_orm_transaction
         
-        # Verifica se o repositório foi chamado com o ORM correto
+        # Verify se o repositório foi chamado com o ORM correto
         self.mock_transaction_repository.save.assert_called_once()
         call_args = self.mock_transaction_repository.save.call_args[0][0]
         assert isinstance(call_args, TransactionORM)
@@ -62,7 +62,7 @@ class TestTransactionService:
         assert call_args.rate == 5.0
 
     def test_record_transaction_repository_error_raises_service_exception(self):
-        """Testa erro no repositório ao gravar transação."""
+        """Test erro no repositório ao gravar transação."""
         # Arrange
         transaction = Transaction(
             user_id=123,
@@ -85,11 +85,11 @@ class TestTransactionService:
         assert "Error recording transaction" in str(exc_info.value)
         assert "Database connection failed" in str(exc_info.value)
         
-        # Verifica que o repositório foi chamado
+        # Verify que o repositório foi chamado
         self.mock_transaction_repository.save.assert_called_once()
 
     def test_get_transactions_success(self):
-        """Testa busca bem-sucedida de transações por usuário."""
+        """Test busca successful transactions by user."""
         # Arrange
         user_id = 123
         
@@ -125,7 +125,7 @@ class TestTransactionService:
         # Assert
         assert len(result) == 2
         
-        # Verifica primeira transação
+        # Verify first transaction
         assert isinstance(result[0], Transaction)
         assert result[0].transaction_id == 1
         assert result[0].user_id == 123
@@ -135,7 +135,7 @@ class TestTransactionService:
         assert result[0].to_value == 500.0
         assert result[0].rate == 5.0
         
-        # Verifica segunda transação
+        # Verify second transaction
         assert isinstance(result[1], Transaction)
         assert result[1].transaction_id == 2
         assert result[1].user_id == 123
@@ -145,11 +145,11 @@ class TestTransactionService:
         assert result[1].to_value == 55.0
         assert result[1].rate == 1.1
         
-        # Verifica se o repositório foi chamado corretamente
+        # Verify that the repository was called correctly
         self.mock_transaction_repository.get_by_user_id.assert_called_once_with(user_id)
 
     def test_get_transactions_empty_list(self):
-        """Testa busca de transações quando o usuário não tem transações."""
+        """Test busca transactions quando o usuário não tem transações."""
         # Arrange
         user_id = 456
         self.mock_transaction_repository.get_by_user_id.return_value = []
@@ -161,11 +161,11 @@ class TestTransactionService:
         assert result == []
         assert len(result) == 0
         
-        # Verifica se o repositório foi chamado corretamente
+        # Verify that the repository was called correctly
         self.mock_transaction_repository.get_by_user_id.assert_called_once_with(user_id)
 
     def test_get_transactions_repository_error_raises_service_exception(self):
-        """Testa erro no repositório ao buscar transações."""
+        """Test erro no repositório when retrieving transações."""
         # Arrange
         user_id = 123
         self.mock_transaction_repository.get_by_user_id.side_effect = Exception("Database timeout")
@@ -177,11 +177,11 @@ class TestTransactionService:
         assert "Error fetching transactions" in str(exc_info.value)
         assert "Database timeout" in str(exc_info.value)
         
-        # Verifica que o repositório foi chamado
+        # Verify que o repositório foi chamado
         self.mock_transaction_repository.get_by_user_id.assert_called_once_with(user_id)
 
     def test_record_transaction_converts_domain_to_orm(self):
-        """Testa se a conversão de domínio para ORM está correta."""
+        """Test se a conversão de domínio para ORM está correta."""
         # Arrange
         now = datetime.now(timezone.utc)
         transaction = Transaction(
@@ -202,7 +202,7 @@ class TestTransactionService:
         self.service.record_transaction(transaction)
 
         # Assert
-        # Verifica se o repositório foi chamado com os valores corretos
+        # Verify se o repositório foi chamado com os valores corretos
         call_args = self.mock_transaction_repository.save.call_args[0][0]
         assert call_args.user_id == 456
         assert call_args.from_currency == "GBP"

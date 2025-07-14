@@ -1,16 +1,22 @@
-name: CI/CD
+name: CI/CD Pipeline
 
 on:
   push:
     branches: [main]
+  workflow_run:
+    workflows: ["CI"]
+    types:
+      - completed
+    branches: [main]
 
 jobs:
-  build:
+  deploy:
     runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'push' }}
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -18,41 +24,100 @@ jobs:
           python-version: '3.10'
 
       - name: Install Poetry
-        run: pip install poetry
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
 
       - name: Install dependencies
         run: poetry install
 
-      - name: Run tests
-        run: poetry run pytest
+      - name: Run final tests before deployment
+        env:
+          DATABASE_URL: sqlite:///./test.db
+          CURRENCY_API_KEY: ${{ secrets.CURRENCY_API_KEY }}
+        run: |
+          poetry run alembic -c currency_converter/alembic.ini upgrade head
+          poetry run pytest currency_converter/tests/ -v
 
       - name: Build Docker image
-        run: docker build -t currency-converter:latest .
+        run: |
+          docker build -t currency-converter:${{ github.sha }} .
+          docker tag currency-converter:${{ github.sha }} currency-converter:latest
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Login to Amazon ECR
+        id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
       - name: Build, tag, and push image to ECR
         env:
-          ECR_REGISTRY: ${{ secrets.AWS_ECR_REGISTRY }}
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           ECR_REPOSITORY: ${{ secrets.AWS_ECR_REPOSITORY }}
-          IMAGE_TAG: latest
+          IMAGE_TAG: ${{ github.sha }}
         run: |
           docker tag currency-converter:latest $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          docker tag currency-converter:latest $ECR_REGISTRY/$ECR_REPOSITORY:latest
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
 
-      # Exemplo de deploy em EC2 via SSH
       - name: Deploy to EC2
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
+          port: ${{ secrets.EC2_PORT || 22 }}
           script: |
-            docker pull ${{ secrets.AWS_ECR_REGISTRY }}/${{ secrets.AWS_ECR_REPOSITORY }}:latest
+            # Configure AWS CLI on EC2
+            aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID }}
+            aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+            aws configure set default.region ${{ secrets.AWS_REGION }}
+            
+            # Login to ECR
+            aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ steps.login-ecr.outputs.registry }}
+            
+            # Pull latest image
+            docker pull ${{ steps.login-ecr.outputs.registry }}/${{ secrets.AWS_ECR_REPOSITORY }}:latest
+            
+            # Stop and remove existing container
             docker stop currency-converter || true
             docker rm currency-converter || true
-            docker run -d --name currency-converter -p 8000:8000 \
+            
+            # Run database migrations
+            docker run --rm \
+              -e DATABASE_URL=${{ secrets.PROD_DATABASE_URL }} \
+              ${{ steps.login-ecr.outputs.registry }}/${{ secrets.AWS_ECR_REPOSITORY }}:latest \
+              alembic -c currency_converter/alembic.ini upgrade head
+            
+            # Start new container
+            docker run -d \
+              --name currency-converter \
+              --restart unless-stopped \
+              -p 8000:8000 \
               -e DATABASE_URL=${{ secrets.PROD_DATABASE_URL }} \
               -e CURRENCY_API_KEY=${{ secrets.PROD_CURRENCY_API_KEY }} \
-              ${{ secrets.AWS_ECR_REGISTRY }}/${{ secrets.AWS_ECR_REPOSITORY }}:latest
+              -e ENVIRONMENT=production \
+              ${{ steps.login-ecr.outputs.registry }}/${{ secrets.AWS_ECR_REPOSITORY }}:latest
+            
+            # Health check
+            sleep 10
+            curl -f http://localhost:8000/docs || exit 1
+            
+            # Clean up old images
+            docker image prune -f
+
+      - name: Notify deployment status
+        uses: 8398a7/action-slack@v3
+        if: always()
+        with:
+          status: ${{ job.status }}
+          channel: '#deployments'
+          webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}

@@ -4,38 +4,82 @@ on:
   push:
     branches:
       - main
+      - develop
   pull_request:
     branches:
       - main
+      - develop
 
 jobs:
   test:
     runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_pass
+          POSTGRES_DB: test_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Set up Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: '3.10'
 
+      - name: Cache Poetry dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pypoetry
+          key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-poetry-
+
+      - name: Install Poetry
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
       - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
+        run: poetry install
 
-      - name: Run tests
-        run: |
-          pytest tests/ --disable-warnings -q
+      - name: Run database migrations
+        env:
+          DATABASE_URL: postgresql://test_user:test_pass@localhost:5432/test_db
+        run: poetry run alembic -c currency_converter/alembic.ini upgrade head
 
-      - name: Lint code
-        run: |
-          pip install flake8
-          flake8 app tests
+      - name: Run linting with Ruff
+        run: poetry run ruff check currency_converter/
 
-      - name: Run type checks
+      - name: Run code formatting check with Black
+        run: poetry run black --check currency_converter/
+
+      - name: Run type checks with MyPy
+        run: poetry run mypy currency_converter/
+
+      - name: Run tests with coverage
+        env:
+          DATABASE_URL: postgresql://test_user:test_pass@localhost:5432/test_db
+          CURRENCY_API_KEY: test_key
         run: |
-          pip install mypy
-          mypy app tests
+          poetry run pytest currency_converter/tests/ -v --cov=currency_converter --cov-report=xml --cov-report=html
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./coverage.xml
+          fail_ci_if_error: true
+
+      - name: Test Docker build
+        run: docker build -t currency-converter:test .

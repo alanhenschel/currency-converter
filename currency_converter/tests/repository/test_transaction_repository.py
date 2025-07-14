@@ -9,15 +9,15 @@ from currency_converter.app.exceptions import DatabaseException
 
 
 class TestTransactionRepository:
-    """Testes unitários isolados para o repositório de transações."""
+    """Testes unitários isolados para o repositório transactions."""
 
     def setup_method(self):
-        """Setup executado antes de cada teste."""
+        """Setup executed before each test."""
         self.mock_db_session = Mock()
         self.repository = TransactionRepositoryImpl(self.mock_db_session)
 
     def test_save_transaction_success(self):
-        """Testa salvamento bem-sucedido de uma transação."""
+        """Test salvamento successful of a transaction."""
         # Arrange
         now = datetime.now(timezone.utc)
         transaction = TransactionORM(
@@ -45,13 +45,13 @@ class TestTransactionRepository:
         assert result == transaction
         assert result.id == 1  # ID foi atribuído pelo refresh
         
-        # Verifica se os métodos do SQLAlchemy foram chamados na ordem correta
+        # Verify se os métodos do SQLAlchemy foram chamados na ordem correta
         self.mock_db_session.add.assert_called_once_with(transaction)
         self.mock_db_session.commit.assert_called_once()
         self.mock_db_session.refresh.assert_called_once_with(transaction)
 
     def test_save_transaction_database_error_raises_database_exception(self):
-        """Testa erro de banco de dados ao salvar transação."""
+        """Test erro database when saving transação."""
         # Arrange
         transaction = TransactionORM(
             user_id=123,
@@ -63,7 +63,7 @@ class TestTransactionRepository:
             timestamp=datetime.now(timezone.utc)
         )
         
-        # Mock do erro de banco de dados
+        # Mock do erro database
         self.mock_db_session.add = Mock()
         self.mock_db_session.commit.side_effect = SQLAlchemyError("Connection timeout")
 
@@ -74,13 +74,13 @@ class TestTransactionRepository:
         assert "Error saving transaction" in str(exc_info.value)
         assert "Connection timeout" in str(exc_info.value)
         
-        # Verifica que add foi chamado mas commit falhou
+        # Verify que add foi chamado mas commit falhou
         self.mock_db_session.add.assert_called_once_with(transaction)
         self.mock_db_session.commit.assert_called_once()
         self.mock_db_session.refresh.assert_not_called()
 
     def test_get_by_user_id_success(self):
-        """Testa busca bem-sucedida de transações por usuário."""
+        """Test busca successful transactions by user."""
         # Arrange
         user_id = 123
         now = datetime.now(timezone.utc)
@@ -126,13 +126,13 @@ class TestTransactionRepository:
         assert result[1].id == 2
         assert result[1].user_id == 123
         
-        # Verifica se a query foi construída corretamente
+        # Verify se a query foi construída corretamente
         self.mock_db_session.query.assert_called_once_with(TransactionORM)
         mock_query.filter.assert_called_once()
         mock_filter.all.assert_called_once()
 
     def test_get_by_user_id_empty_result(self):
-        """Testa busca de transações quando usuário não tem transações."""
+        """Test busca transactions quando usuário não tem transações."""
         # Arrange
         user_id = 456
         
@@ -150,17 +150,17 @@ class TestTransactionRepository:
         assert result == []
         assert len(result) == 0
         
-        # Verifica se a query foi construída corretamente
+        # Verify se a query foi construída corretamente
         self.mock_db_session.query.assert_called_once_with(TransactionORM)
         mock_query.filter.assert_called_once()
         mock_filter.all.assert_called_once()
 
     def test_get_by_user_id_database_error_raises_database_exception(self):
-        """Testa erro de banco de dados ao buscar transações."""
+        """Test erro database when retrieving transações."""
         # Arrange
         user_id = 123
         
-        # Mock do erro de banco de dados
+        # Mock do erro database
         mock_query = Mock()
         mock_filter = Mock()
         mock_query.filter.return_value = mock_filter
@@ -174,13 +174,13 @@ class TestTransactionRepository:
         assert "Error fetching transactions for user 123" in str(exc_info.value)
         assert "Table does not exist" in str(exc_info.value)
         
-        # Verifica que a query foi tentada
+        # Verify que a query foi tentada
         self.mock_db_session.query.assert_called_once_with(TransactionORM)
         mock_query.filter.assert_called_once()
         mock_filter.all.assert_called_once()
 
     def test_save_transaction_handles_generic_exception(self):
-        """Testa tratamento de exceção genérica ao salvar."""
+        """Test tratamento de exceção genérica when saving."""
         # Arrange
         transaction = TransactionORM(
             user_id=123,
@@ -203,7 +203,7 @@ class TestTransactionRepository:
         assert "Generic database error" in str(exc_info.value)
 
     def test_get_by_user_id_handles_generic_exception(self):
-        """Testa tratamento de exceção genérica ao buscar."""
+        """Test tratamento de exceção genérica when retrieving."""
         # Arrange
         user_id = 123
         
@@ -218,7 +218,7 @@ class TestTransactionRepository:
         assert "Generic query error" in str(exc_info.value)
 
     def test_save_transaction_preserves_transaction_data(self):
-        """Testa se os dados da transação são preservados durante o save."""
+        """Test se os dados da transação são preservados durante o save."""
         # Arrange
         now = datetime.now(timezone.utc)
         transaction = TransactionORM(

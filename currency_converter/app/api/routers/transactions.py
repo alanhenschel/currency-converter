@@ -13,7 +13,7 @@ router = APIRouter()
 async def get_transactions(userId: int, transaction_service: TransactionService = Depends(get_transaction_service)):
     try:
         transactions = transaction_service.get_transactions(userId)
-        return transactions  # Retorna lista vazia se não houver transações
+        return transactions  # Return empty list if no transactions
     except TransactionNotFoundException as e:
         logger.error(f"Transaction not found: {e}")
         raise HTTPException(status_code=404, detail=str(e))

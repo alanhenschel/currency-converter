@@ -16,7 +16,7 @@ def client():
 
 @pytest.fixture
 def sample_transaction():
-    """Fixture para uma transação de exemplo."""
+    """Fixture for an example transaction."""
     return Transaction(
         transaction_id=1,
         user_id=123,
@@ -31,7 +31,7 @@ def sample_transaction():
 
 @pytest.fixture
 def sample_transaction_orm():
-    """Fixture para uma transação ORM de exemplo."""
+    """Fixture for an example ORM transaction."""
     return TransactionORM(
         id=1,
         user_id=123,
@@ -46,13 +46,13 @@ def sample_transaction_orm():
 
 @pytest.fixture
 def mock_db_session():
-    """Fixture para mock da sessão do banco de dados."""
+    """Fixture for database session mock."""
     return Mock()
 
 
 @pytest.fixture
 def mock_transaction_repository():
-    """Fixture para mock do repositório de transações."""
+    """Fixture para mock do repositório transactions."""
     return Mock()
 
 
@@ -60,19 +60,19 @@ def mock_transaction_repository():
 def mock_currency_api():
     """Fixture para mock da API de câmbio."""
     mock = Mock()
-    mock.get_exchange_rate.return_value = 5.0  # Taxa padrão
+    mock.get_exchange_rate.return_value = 5.0  # Default rate
     return mock
 
 
 @pytest.fixture
 def mock_transaction_service():
-    """Fixture para mock do serviço de transações."""
+    """Fixture para mock do serviço transactions."""
     return Mock()
 
 
 @pytest.fixture
 def mock_conversion_service():
-    """Fixture para mock do serviço de conversão."""
+    """Fixture for conversion service mock."""
     return Mock()
 
 
@@ -84,7 +84,7 @@ def reset_mocks():
 
 
 class TestDataFactory:
-    """Factory para criar dados de teste padronizados."""
+    """Factory for creating standardized test data."""
     
     @staticmethod
     def create_transaction(
@@ -97,7 +97,7 @@ class TestDataFactory:
         rate=5.0,
         timestamp=None
     ):
-        """Cria uma transação de domínio."""
+        """Creates a domain transaction."""
         if timestamp is None:
             timestamp = datetime.now(timezone.utc)
             
@@ -123,7 +123,7 @@ class TestDataFactory:
         rate=5.0,
         timestamp=None
     ):
-        """Cria uma transação ORM."""
+        """Creates an ORM transaction."""
         if timestamp is None:
             timestamp = datetime.now(timezone.utc)
             

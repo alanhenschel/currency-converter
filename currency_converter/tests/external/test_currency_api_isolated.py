@@ -14,12 +14,12 @@ class TestCurrencyAPIIsolated:
     """Testes unitários isolados para CurrencyAPI."""
 
     def setup_method(self):
-        """Setup executado antes de cada teste."""
+        """Setup executed before each test."""
         self.api_key = "test_api_key"
         
     @patch('currency_converter.app.infrastructure.external.currency_api.Client')
     def test_get_exchange_rate_success(self, mock_client_class):
-        """Testa busca bem-sucedida de taxa de câmbio."""
+        """Test busca successful exchange rate."""
         # Arrange
         mock_client = Mock()
         mock_client_class.return_value = mock_client
@@ -51,7 +51,7 @@ class TestCurrencyAPIIsolated:
 
     @patch('currency_converter.app.infrastructure.external.currency_api.Client')
     def test_get_exchange_rate_currency_not_found(self, mock_client_class):
-        """Testa quando a moeda não é encontrada na resposta."""
+        """Test quando a moeda não é encontrada na resposta."""
         # Arrange
         mock_client = Mock()
         mock_client_class.return_value = mock_client
@@ -80,7 +80,7 @@ class TestCurrencyAPIIsolated:
 
     @patch('currency_converter.app.infrastructure.external.currency_api.Client')
     def test_get_exchange_rate_empty_response(self, mock_client_class):
-        """Testa resposta vazia da API."""
+        """Test resposta vazia da API."""
         # Arrange
         mock_client = Mock()
         mock_client_class.return_value = mock_client
@@ -100,7 +100,7 @@ class TestCurrencyAPIIsolated:
 
     @patch('currency_converter.app.infrastructure.external.currency_api.Client')
     def test_get_exchange_rate_client_exception(self, mock_client_class):
-        """Testa exceção do cliente da API."""
+        """Test exceção do cliente da API."""
         # Arrange
         mock_client = Mock()
         mock_client_class.return_value = mock_client
@@ -122,7 +122,7 @@ class TestCurrencyAPIIsolated:
 
     @patch('currency_converter.app.infrastructure.external.currency_api.Client')
     def test_get_exchange_rate_different_currencies(self, mock_client_class):
-        """Testa conversão entre diferentes pares de moedas."""
+        """Test conversão between different currency pairs."""
         # Arrange
         mock_client = Mock()
         mock_client_class.return_value = mock_client
@@ -154,7 +154,7 @@ class TestCurrencyAPIIsolated:
 
     @patch('currency_converter.app.infrastructure.external.currency_api.Client')
     def test_get_exchange_rate_malformed_response(self, mock_client_class):
-        """Testa resposta malformada da API."""
+        """Test resposta malformada da API."""
         # Arrange
         mock_client = Mock()
         mock_client_class.return_value = mock_client

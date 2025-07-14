@@ -12,10 +12,10 @@ from currency_converter.app.exceptions import (
 
 
 class TestConversionService:
-    """Testes unitários isolados para o serviço de conversão de moedas."""
+    """Isolated unit tests for the currency conversion service."""
 
     def setup_method(self):
-        """Setup executado antes de cada teste."""
+        """Setup executed before each test."""
         self.mock_transaction_repository = Mock()
         self.mock_currency_api = Mock()
         self.mock_transaction_service = Mock()
@@ -27,7 +27,7 @@ class TestConversionService:
         )
 
     def test_convert_success(self):
-        """Testa conversão bem-sucedida."""
+        """Test successful conversion."""
         # Arrange
         conversion_request = ConversionRequest(
             from_currency="USD",
@@ -64,12 +64,12 @@ class TestConversionService:
         assert result.rate == 5.0
         assert result.transaction_id == 1
         
-        # Verifica se os mocks foram chamados corretamente
+        # Verify se os mocks foram chamados corretamente
         self.mock_currency_api.get_exchange_rate.assert_called_once_with(conversion_request)
         self.mock_transaction_service.record_transaction.assert_called_once()
 
     def test_convert_zero_amount_raises_validation_error(self):
-        """Testa erro de validação para valor zero."""
+        """Test validation error para valor zero."""
         # Arrange
         conversion_request = ConversionRequest(
             from_currency="USD",
@@ -83,12 +83,12 @@ class TestConversionService:
         
         assert "Amount must be greater than zero" in str(exc_info.value)
         
-        # Verifica que os mocks não foram chamados
+        # Verify que os mocks não foram chamados
         self.mock_currency_api.get_exchange_rate.assert_not_called()
         self.mock_transaction_service.record_transaction.assert_not_called()
 
     def test_convert_negative_amount_raises_validation_error(self):
-        """Testa erro de validação para valor negativo."""
+        """Test validation error para valor negativo."""
         # Arrange
         conversion_request = ConversionRequest(
             from_currency="USD",
@@ -102,12 +102,12 @@ class TestConversionService:
         
         assert "Amount must be greater than zero" in str(exc_info.value)
         
-        # Verifica que os mocks não foram chamados
+        # Verify que os mocks não foram chamados
         self.mock_currency_api.get_exchange_rate.assert_not_called()
         self.mock_transaction_service.record_transaction.assert_not_called()
 
     def test_convert_currency_api_error_raises_conversion_error(self):
-        """Testa erro na API de câmbio."""
+        """Test erro na API de câmbio."""
         # Arrange
         conversion_request = ConversionRequest(
             from_currency="USD",
@@ -124,12 +124,12 @@ class TestConversionService:
         
         assert "API timeout" in str(exc_info.value)
         
-        # Verifica que a API foi chamada mas o transaction_service não
+        # Verify que a API foi chamada mas o transaction_service não
         self.mock_currency_api.get_exchange_rate.assert_called_once_with(conversion_request)
         self.mock_transaction_service.record_transaction.assert_not_called()
 
     def test_convert_transaction_service_error_raises_conversion_error(self):
-        """Testa erro no serviço de transações."""
+        """Test erro no serviço transactions."""
         # Arrange
         conversion_request = ConversionRequest(
             from_currency="USD",
@@ -150,12 +150,12 @@ class TestConversionService:
         assert "Error during conversion" in str(exc_info.value)
         assert "Database error" in str(exc_info.value)
         
-        # Verifica que ambos foram chamados
+        # Verify que ambos foram chamados
         self.mock_currency_api.get_exchange_rate.assert_called_once_with(conversion_request)
         self.mock_transaction_service.record_transaction.assert_called_once()
 
     def test_convert_calculates_correct_amount(self):
-        """Testa se o cálculo da conversão está correto."""
+        """Test se o cálculo da conversão está correto."""
         # Arrange
         conversion_request = ConversionRequest(
             from_currency="EUR",

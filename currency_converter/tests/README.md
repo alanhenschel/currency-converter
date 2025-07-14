@@ -1,6 +1,6 @@
-# Testes Unitários - Currency Converter
+# Unit Tests - Currency Converter
 
-Este diretório contém testes unitários isolados para todas as camadas da aplicação.
+This directory contains isolated unit tests for all application layers.
 
 ## Estrutura dos Testes
 

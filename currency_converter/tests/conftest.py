@@ -5,7 +5,9 @@ from fastapi.testclient import TestClient
 
 from currency_converter.app.main import app
 from currency_converter.app.domain.models.transaction import Transaction
-from currency_converter.app.infrastructure.db.models import Transaction as TransactionORM
+from currency_converter.app.infrastructure.db.models import (
+    Transaction as TransactionORM,
+)
 
 
 @pytest.fixture
@@ -25,7 +27,7 @@ def sample_transaction():
         from_value=100.0,
         to_value=500.0,
         rate=5.0,
-        timestamp=datetime.now(timezone.utc)
+        timestamp=datetime.now(timezone.utc),
     )
 
 
@@ -40,7 +42,7 @@ def sample_transaction_orm():
         from_value=100.0,
         to_value=500.0,
         rate=5.0,
-        timestamp=datetime.now(timezone.utc)
+        timestamp=datetime.now(timezone.utc),
     )
 
 
@@ -85,7 +87,7 @@ def reset_mocks():
 
 class TestDataFactory:
     """Factory for creating standardized test data."""
-    
+
     @staticmethod
     def create_transaction(
         transaction_id=1,
@@ -95,12 +97,12 @@ class TestDataFactory:
         from_value=100.0,
         to_value=500.0,
         rate=5.0,
-        timestamp=None
+        timestamp=None,
     ):
         """Creates a domain transaction."""
         if timestamp is None:
             timestamp = datetime.now(timezone.utc)
-            
+
         return Transaction(
             transaction_id=transaction_id,
             user_id=user_id,
@@ -109,9 +111,9 @@ class TestDataFactory:
             from_value=from_value,
             to_value=to_value,
             rate=rate,
-            timestamp=timestamp
+            timestamp=timestamp,
         )
-    
+
     @staticmethod
     def create_transaction_orm(
         id=1,
@@ -121,12 +123,12 @@ class TestDataFactory:
         from_value=100.0,
         to_value=500.0,
         rate=5.0,
-        timestamp=None
+        timestamp=None,
     ):
         """Creates an ORM transaction."""
         if timestamp is None:
             timestamp = datetime.now(timezone.utc)
-            
+
         return TransactionORM(
             id=id,
             user_id=user_id,
@@ -135,7 +137,7 @@ class TestDataFactory:
             from_value=from_value,
             to_value=to_value,
             rate=rate,
-            timestamp=timestamp
+            timestamp=timestamp,
         )
 
 
@@ -145,9 +147,10 @@ def setup_test_environment():
     """Configuração global do ambiente de teste."""
     # Configurar logging para testes, desabilitar logs externos, etc.
     import logging
+
     logging.getLogger("requests").setLevel(logging.WARNING)
     logging.getLogger("urllib3").setLevel(logging.WARNING)
-    
+
     yield
-    
+
     # Cleanup global se necessário

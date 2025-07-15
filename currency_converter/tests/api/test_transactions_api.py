@@ -1,5 +1,4 @@
-import pytest
-from unittest.mock import Mock, patch
+from unittest.mock import Mock
 from fastapi.testclient import TestClient
 from datetime import datetime, timezone
 
@@ -27,7 +26,7 @@ class TestTransactionsAPI:
                 from_value=100.0,
                 to_value=500.0,
                 rate=5.0,
-                timestamp=datetime.now(timezone.utc)
+                timestamp=datetime.now(timezone.utc),
             ),
             Transaction(
                 transaction_id=2,
@@ -37,8 +36,8 @@ class TestTransactionsAPI:
                 from_value=50.0,
                 to_value=55.0,
                 rate=1.1,
-                timestamp=datetime.now(timezone.utc)
-            )
+                timestamp=datetime.now(timezone.utc),
+            ),
         ]
         mock_service.get_transactions.return_value = mock_transactions
 
@@ -59,7 +58,7 @@ class TestTransactionsAPI:
             assert data[1]["transaction_id"] == 2
             assert data[1]["from_currency"] == "EUR"
             assert data[1]["to_currency"] == "USD"
-            
+
             # Verify that the service was called correctly
             mock_service.get_transactions.assert_called_once_with(123)
         finally:
@@ -84,7 +83,7 @@ class TestTransactionsAPI:
             data = response.json()
             assert len(data) == 0
             assert data == []
-            
+
             # Verify that the service was called correctly
             mock_service.get_transactions.assert_called_once_with(456)
         finally:
@@ -95,7 +94,9 @@ class TestTransactionsAPI:
         """Test service error when retrieving transactions."""
         # Arrange
         mock_service = Mock()
-        mock_service.get_transactions.side_effect = ServiceException("Database connection failed")
+        mock_service.get_transactions.side_effect = ServiceException(
+            "Database connection failed"
+        )
 
         # Override dependency
         app.dependency_overrides[get_transaction_service] = lambda: mock_service
@@ -150,7 +151,7 @@ class TestTransactionsAPI:
         app.dependency_overrides[get_transaction_service] = lambda: mock_service
 
         try:
-            # Act  
+            # Act
             response = client.get("/api/v1/transactions?userId=-1")
 
             # Assert

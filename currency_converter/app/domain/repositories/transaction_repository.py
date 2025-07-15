@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from typing import List
 from ...domain.models.transaction import Transaction
 
+
 class TransactionRepository(ABC):
     @abstractmethod
     def save(self, transaction: Transaction) -> Transaction:

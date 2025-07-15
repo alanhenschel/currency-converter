@@ -1,7 +1,11 @@
 from typing import Dict, Any
 from currencyapicom import Client
 from currency_converter.app.schemas.conversion import ConversionRequest
-from currency_converter.app.exceptions import ConversionErrorException, CurrencyNotFoundException
+from currency_converter.app.exceptions import (
+    ConversionErrorException,
+    CurrencyNotFoundException,
+)
+
 
 class CurrencyAPI:
     def __init__(self, api_key: str):
@@ -11,11 +15,15 @@ class CurrencyAPI:
         try:
             result = self.client.latest(
                 base_currency=conversion_request.from_currency,
-                currencies=[conversion_request.to_currency]
+                currencies=[conversion_request.to_currency],
             )
-            if not result or 'data' not in result or conversion_request.to_currency not in result['data']:
+            if (
+                not result
+                or "data" not in result
+                or conversion_request.to_currency not in result["data"]
+            ):
                 raise CurrencyNotFoundException(conversion_request.to_currency)
-            return result['data'][conversion_request.to_currency]['value']
+            return result["data"][conversion_request.to_currency]["value"]
         except CurrencyNotFoundException:
             # Re-raise without wrapping
             raise

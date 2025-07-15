@@ -1,0 +1,310 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+    branches:
+      - main
+      - develop
+
+env:
+  AWS_REGION: us-east-1
+  ECR_BACKEND_REPOSITORY: currency-converter-backend
+  ECR_FRONTEND_REPOSITORY: currency-converter-frontend
+
+jobs:
+  test-backend:
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_pass
+          POSTGRES_DB: test_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Cache Poetry dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pypoetry
+          key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-poetry-
+
+      - name: Install Poetry
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Install dependencies
+        run: poetry install
+
+      - name: Run database migrations
+        env:
+          DATABASE_URL: postgresql://test_user:test_pass@localhost:5432/test_db
+        run: poetry run alembic -c currency_converter/alembic.ini upgrade head
+
+      - name: Run linting with Ruff
+        run: poetry run ruff check currency_converter/
+
+      - name: Run code formatting check with Black
+        run: poetry run black --check currency_converter/
+
+      - name: Run type checks with MyPy
+        run: poetry run mypy currency_converter/
+
+      - name: Run tests with coverage
+        env:
+          DATABASE_URL: postgresql://test_user:test_pass@localhost:5432/test_db
+          CURRENCY_API_KEY: test_key
+        run: |
+          poetry run pytest currency_converter/tests/ -v --cov=currency_converter --cov-report=xml --cov-report=html
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./coverage.xml
+          fail_ci_if_error: true
+
+  test-frontend:
+    runs-on: ubuntu-latest
+    
+    defaults:
+      run:
+        working-directory: ./frontend
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run ESLint
+        run: npm run lint --if-present
+
+      - name: Run tests with coverage
+        run: npm run test:coverage
+
+      - name: Build production bundle
+        run: npm run build
+
+      - name: Upload frontend coverage
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./frontend/coverage/lcov.info
+          flags: frontend
+          fail_ci_if_error: false
+
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    needs: [test-backend, test-frontend]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and push backend image to ECR
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker build -t $ECR_REGISTRY/$ECR_BACKEND_REPOSITORY:$IMAGE_TAG .
+          docker build -t $ECR_REGISTRY/$ECR_BACKEND_REPOSITORY:latest .
+          docker push $ECR_REGISTRY/$ECR_BACKEND_REPOSITORY:$IMAGE_TAG
+          docker push $ECR_REGISTRY/$ECR_BACKEND_REPOSITORY:latest
+
+      - name: Build and push frontend image to ECR
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker build -t $ECR_REGISTRY/$ECR_FRONTEND_REPOSITORY:$IMAGE_TAG ./frontend
+          docker build -t $ECR_REGISTRY/$ECR_FRONTEND_REPOSITORY:latest ./frontend
+          docker push $ECR_REGISTRY/$ECR_FRONTEND_REPOSITORY:$IMAGE_TAG
+          docker push $ECR_REGISTRY/$ECR_FRONTEND_REPOSITORY:latest
+
+      - name: Deploy to EC2
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            # Update system packages
+            sudo apt-get update -y
+            
+            # Install Docker if not present
+            if ! command -v docker &> /dev/null; then
+              curl -fsSL https://get.docker.com -o get-docker.sh
+              sudo sh get-docker.sh
+              sudo usermod -aG docker $USER
+              newgrp docker
+            fi
+            
+            # Install AWS CLI if not present
+            if ! command -v aws &> /dev/null; then
+              curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+              unzip awscliv2.zip
+              sudo ./aws/install
+              rm -rf awscliv2.zip aws/
+            fi
+            
+            # Configure AWS credentials
+            aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID }}
+            aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+            aws configure set default.region ${{ env.AWS_REGION }}
+            
+            # Login to ECR
+            aws ecr get-login-password --region ${{ env.AWS_REGION }} | docker login --username AWS --password-stdin ${{ steps.login-ecr.outputs.registry }}
+            
+            # Stop existing containers
+            docker compose -f docker-compose.prod.yml down 2>/dev/null || true
+            
+            # Pull latest images
+            docker pull ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_BACKEND_REPOSITORY }}:latest
+            docker pull ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_FRONTEND_REPOSITORY }}:latest
+            
+            # Create production docker-compose file
+            cat > docker-compose.prod.yml << 'EOF'
+            services:
+              db:
+                image: postgres:15
+                restart: always
+                environment:
+                  POSTGRES_USER: ${POSTGRES_USER}
+                  POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+                  POSTGRES_DB: ${POSTGRES_DB}
+                ports:
+                  - "5432:5432"
+                volumes:
+                  - pgdata:/var/lib/postgresql/data
+                healthcheck:
+                  test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+                  interval: 30s
+                  timeout: 10s
+                  retries: 3
+
+              app:
+                image: ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_BACKEND_REPOSITORY }}:latest
+                command: >
+                  sh -c "alembic -c currency_converter/alembic.ini upgrade head && 
+                         uvicorn currency_converter.app.main:app --host 0.0.0.0 --port 8000"
+                ports:
+                  - "8000:8000"
+                environment:
+                  DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+                  CURRENCY_API_KEY: ${CURRENCY_API_KEY}
+                  CURRENCY_API_URL: ${CURRENCY_API_URL}
+                  ENVIRONMENT: production
+                depends_on:
+                  db:
+                    condition: service_healthy
+                healthcheck:
+                  test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+                  interval: 30s
+                  timeout: 10s
+                  retries: 3
+                restart: unless-stopped
+
+              frontend:
+                image: ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_FRONTEND_REPOSITORY }}:latest
+                ports:
+                  - "80:3000"
+                environment:
+                  REACT_APP_API_URL: http://${EC2_PUBLIC_IP}:8000
+                depends_on:
+                  app:
+                    condition: service_healthy
+                healthcheck:
+                  test: ["CMD", "curl", "-f", "http://localhost:3000"]
+                  interval: 30s
+                  timeout: 10s
+                  retries: 3
+                restart: unless-stopped
+
+            volumes:
+              pgdata:
+            EOF
+            
+            # Create environment file
+            cat > .env << EOF
+            POSTGRES_USER=${{ secrets.POSTGRES_USER }}
+            POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
+            POSTGRES_DB=${{ secrets.POSTGRES_DB }}
+            CURRENCY_API_KEY=${{ secrets.CURRENCY_API_KEY }}
+            CURRENCY_API_URL=${{ secrets.CURRENCY_API_URL }}
+            EC2_PUBLIC_IP=${{ secrets.EC2_PUBLIC_IP }}
+            EOF
+            
+            # Start services
+            docker compose -f docker-compose.prod.yml up -d
+            
+            # Wait for services to be healthy
+            echo "Waiting for services to be ready..."
+            sleep 60
+            
+            # Verify deployment
+            echo "Verifying backend health..."
+            timeout 30 bash -c 'until curl -f http://localhost:8000/health; do sleep 2; done'
+            
+            echo "Verifying frontend..."
+            timeout 30 bash -c 'until curl -f http://localhost:80; do sleep 2; done'
+            
+            echo "Deployment completed successfully!"
+            
+            # Clean up old Docker images
+            docker image prune -f
+
+      - name: Notify deployment success
+        if: success()
+        run: |
+          echo "🚀 Deployment completed successfully!"
+          echo "Frontend: http://${{ secrets.EC2_PUBLIC_IP }}"
+          echo "Backend API: http://${{ secrets.EC2_PUBLIC_IP }}:8000"
+          echo "Health Check: http://${{ secrets.EC2_PUBLIC_IP }}:8000/health"
+
+      - name: Notify deployment failure
+        if: failure()
+        run: |
+          echo "❌ Deployment failed!"
+          echo "Check the logs above for details."

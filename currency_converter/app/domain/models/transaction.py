@@ -1,7 +1,9 @@
 from datetime import datetime
 from pydantic import BaseModel
 from typing import Optional
-from currency_converter.app.infrastructure.db.models import Transaction as TransactionORM
+from currency_converter.app.infrastructure.db.models import (
+    Transaction as TransactionORM,
+)
 
 
 class Transaction(BaseModel):
@@ -16,7 +18,7 @@ class Transaction(BaseModel):
 
     class Config:
         orm_mode = True
-    
+
     def to_orm(self):
         return TransactionORM(
             user_id=self.user_id,
@@ -27,7 +29,7 @@ class Transaction(BaseModel):
             rate=self.rate,
             timestamp=self.timestamp,
         )
-    
+
     def from_orm(orm_obj):
         return Transaction(
             transaction_id=orm_obj.id,

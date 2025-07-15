@@ -1,6 +1,7 @@
 from pydantic import BaseModel
 from datetime import datetime
 
+
 class TransactionBase(BaseModel):
     user_id: int
     from_currency: str
@@ -10,14 +11,17 @@ class TransactionBase(BaseModel):
     rate: float
     timestamp: datetime
 
+
 class TransactionCreate(TransactionBase):
     pass
+
 
 class Transaction(TransactionBase):
     transaction_id: int
 
     class Config:
         orm_mode = True
-        
+
+
 class TransactionResponse(Transaction):
     pass

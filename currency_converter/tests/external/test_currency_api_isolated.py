@@ -7,7 +7,10 @@ import pytest
 from unittest.mock import Mock, patch
 from currency_converter.app.infrastructure.external.currency_api import CurrencyAPI
 from currency_converter.app.schemas.conversion import ConversionRequest
-from currency_converter.app.exceptions import ConversionErrorException, CurrencyNotFoundException
+from currency_converter.app.exceptions import (
+    ConversionErrorException,
+    CurrencyNotFoundException,
+)
 
 
 class TestCurrencyAPIIsolated:
@@ -16,27 +19,19 @@ class TestCurrencyAPIIsolated:
     def setup_method(self):
         """Setup executed before each test."""
         self.api_key = "test_api_key"
-        
-    @patch('currency_converter.app.infrastructure.external.currency_api.Client')
+
+    @patch("currency_converter.app.infrastructure.external.currency_api.Client")
     def test_get_exchange_rate_success(self, mock_client_class):
         """Test busca successful exchange rate."""
         # Arrange
         mock_client = Mock()
         mock_client_class.return_value = mock_client
-        
-        mock_client.latest.return_value = {
-            'data': {
-                'BRL': {
-                    'value': 5.0
-                }
-            }
-        }
-        
+
+        mock_client.latest.return_value = {"data": {"BRL": {"value": 5.0}}}
+
         currency_api = CurrencyAPI(self.api_key)
         conversion_request = ConversionRequest(
-            from_currency="USD",
-            to_currency="BRL",
-            amount=100.0
+            from_currency="USD", to_currency="BRL", amount=100.0
         )
 
         # Act
@@ -45,101 +40,84 @@ class TestCurrencyAPIIsolated:
         # Assert
         assert result == 5.0
         mock_client.latest.assert_called_once_with(
-            base_currency="USD",
-            currencies=["BRL"]
+            base_currency="USD", currencies=["BRL"]
         )
 
-    @patch('currency_converter.app.infrastructure.external.currency_api.Client')
+    @patch("currency_converter.app.infrastructure.external.currency_api.Client")
     def test_get_exchange_rate_currency_not_found(self, mock_client_class):
         """Test quando a moeda não é encontrada na resposta."""
         # Arrange
         mock_client = Mock()
         mock_client_class.return_value = mock_client
-        
+
         mock_client.latest.return_value = {
-            'data': {
-                'EUR': {
-                    'value': 0.85
-                }
+            "data": {
+                "EUR": {"value": 0.85}
                 # BRL ausente
             }
         }
-        
+
         currency_api = CurrencyAPI(self.api_key)
         conversion_request = ConversionRequest(
-            from_currency="USD",
-            to_currency="BRL",
-            amount=100.0
+            from_currency="USD", to_currency="BRL", amount=100.0
         )
 
         # Act & Assert
         with pytest.raises(CurrencyNotFoundException) as exc_info:
             currency_api.get_exchange_rate(conversion_request)
-        
+
         assert "BRL" in str(exc_info.value)
 
-    @patch('currency_converter.app.infrastructure.external.currency_api.Client')
+    @patch("currency_converter.app.infrastructure.external.currency_api.Client")
     def test_get_exchange_rate_empty_response(self, mock_client_class):
         """Test resposta vazia da API."""
         # Arrange
         mock_client = Mock()
         mock_client_class.return_value = mock_client
-        
+
         mock_client.latest.return_value = None
-        
+
         currency_api = CurrencyAPI(self.api_key)
         conversion_request = ConversionRequest(
-            from_currency="USD",
-            to_currency="BRL",
-            amount=100.0
+            from_currency="USD", to_currency="BRL", amount=100.0
         )
 
         # Act & Assert
         with pytest.raises(CurrencyNotFoundException):
             currency_api.get_exchange_rate(conversion_request)
 
-    @patch('currency_converter.app.infrastructure.external.currency_api.Client')
+    @patch("currency_converter.app.infrastructure.external.currency_api.Client")
     def test_get_exchange_rate_client_exception(self, mock_client_class):
         """Test exceção do cliente da API."""
         # Arrange
         mock_client = Mock()
         mock_client_class.return_value = mock_client
-        
+
         mock_client.latest.side_effect = Exception("API Error")
-        
+
         currency_api = CurrencyAPI(self.api_key)
         conversion_request = ConversionRequest(
-            from_currency="USD",
-            to_currency="BRL",
-            amount=100.0
+            from_currency="USD", to_currency="BRL", amount=100.0
         )
 
         # Act & Assert
         with pytest.raises(ConversionErrorException) as exc_info:
             currency_api.get_exchange_rate(conversion_request)
-        
+
         assert "API Error" in str(exc_info.value)
 
-    @patch('currency_converter.app.infrastructure.external.currency_api.Client')
+    @patch("currency_converter.app.infrastructure.external.currency_api.Client")
     def test_get_exchange_rate_different_currencies(self, mock_client_class):
         """Test conversão between different currency pairs."""
         # Arrange
         mock_client = Mock()
         mock_client_class.return_value = mock_client
-        
-        mock_client.latest.return_value = {
-            'data': {
-                'JPY': {
-                    'value': 140.0
-                }
-            }
-        }
-        
+
+        mock_client.latest.return_value = {"data": {"JPY": {"value": 140.0}}}
+
         currency_api = CurrencyAPI(self.api_key)
         conversion_request = ConversionRequest(
-            from_currency="EUR",
-            to_currency="JPY",
-            amount=50.0
+            from_currency="EUR", to_currency="JPY", amount=50.0
         )
 
         # Act
@@ -148,27 +126,24 @@ class TestCurrencyAPIIsolated:
         # Assert
         assert result == 140.0
         mock_client.latest.assert_called_once_with(
-            base_currency="EUR",
-            currencies=["JPY"]
+            base_currency="EUR", currencies=["JPY"]
         )
 
-    @patch('currency_converter.app.infrastructure.external.currency_api.Client')
+    @patch("currency_converter.app.infrastructure.external.currency_api.Client")
     def test_get_exchange_rate_malformed_response(self, mock_client_class):
         """Test resposta malformada da API."""
         # Arrange
         mock_client = Mock()
         mock_client_class.return_value = mock_client
-        
+
         mock_client.latest.return_value = {
-            'wrong_field': {}
+            "wrong_field": {}
             # Campo 'data' ausente
         }
-        
+
         currency_api = CurrencyAPI(self.api_key)
         conversion_request = ConversionRequest(
-            from_currency="USD",
-            to_currency="BRL",
-            amount=100.0
+            from_currency="USD", to_currency="BRL", amount=100.0
         )
 
         # Act & Assert

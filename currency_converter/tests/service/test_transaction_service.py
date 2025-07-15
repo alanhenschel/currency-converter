@@ -2,9 +2,13 @@ import pytest
 from unittest.mock import Mock
 from datetime import datetime, timezone
 
-from currency_converter.app.domain.services.transaction_service import TransactionService
+from currency_converter.app.domain.services.transaction_service import (
+    TransactionService,
+)
 from currency_converter.app.domain.models.transaction import Transaction
-from currency_converter.app.infrastructure.db.models import Transaction as TransactionORM
+from currency_converter.app.infrastructure.db.models import (
+    Transaction as TransactionORM,
+)
 from currency_converter.app.exceptions import ServiceException
 
 
@@ -27,9 +31,9 @@ class TestTransactionService:
             from_value=100.0,
             to_value=500.0,
             rate=5.0,
-            timestamp=datetime.now(timezone.utc)
+            timestamp=datetime.now(timezone.utc),
         )
-        
+
         # Mock do ORM retornado pelo repositório
         saved_orm_transaction = TransactionORM(
             id=1,
@@ -39,9 +43,9 @@ class TestTransactionService:
             from_value=100.0,
             to_value=500.0,
             rate=5.0,
-            timestamp=datetime.now(timezone.utc)
+            timestamp=datetime.now(timezone.utc),
         )
-        
+
         self.mock_transaction_repository.save.return_value = saved_orm_transaction
 
         # Act
@@ -49,7 +53,7 @@ class TestTransactionService:
 
         # Assert
         assert result == saved_orm_transaction
-        
+
         # Verify se o repositório foi chamado com o ORM correto
         self.mock_transaction_repository.save.assert_called_once()
         call_args = self.mock_transaction_repository.save.call_args[0][0]
@@ -72,19 +76,21 @@ class TestTransactionService:
             from_value=100.0,
             to_value=500.0,
             rate=5.0,
-            timestamp=datetime.now(timezone.utc)
+            timestamp=datetime.now(timezone.utc),
         )
-        
+
         # Mock do repositório levantando exceção
-        self.mock_transaction_repository.save.side_effect = Exception("Database connection failed")
+        self.mock_transaction_repository.save.side_effect = Exception(
+            "Database connection failed"
+        )
 
         # Act & Assert
         with pytest.raises(ServiceException) as exc_info:
             self.service.record_transaction(transaction)
-        
+
         assert "Error recording transaction" in str(exc_info.value)
         assert "Database connection failed" in str(exc_info.value)
-        
+
         # Verify que o repositório foi chamado
         self.mock_transaction_repository.save.assert_called_once()
 
@@ -92,7 +98,7 @@ class TestTransactionService:
         """Test busca successful transactions by user."""
         # Arrange
         user_id = 123
-        
+
         # Mock das transações ORM retornadas pelo repositório
         orm_transactions = [
             TransactionORM(
@@ -103,7 +109,7 @@ class TestTransactionService:
                 from_value=100.0,
                 to_value=500.0,
                 rate=5.0,
-                timestamp=datetime.now(timezone.utc)
+                timestamp=datetime.now(timezone.utc),
             ),
             TransactionORM(
                 id=2,
@@ -113,10 +119,10 @@ class TestTransactionService:
                 from_value=50.0,
                 to_value=55.0,
                 rate=1.1,
-                timestamp=datetime.now(timezone.utc)
-            )
+                timestamp=datetime.now(timezone.utc),
+            ),
         ]
-        
+
         self.mock_transaction_repository.get_by_user_id.return_value = orm_transactions
 
         # Act
@@ -124,7 +130,7 @@ class TestTransactionService:
 
         # Assert
         assert len(result) == 2
-        
+
         # Verify first transaction
         assert isinstance(result[0], Transaction)
         assert result[0].transaction_id == 1
@@ -134,7 +140,7 @@ class TestTransactionService:
         assert result[0].from_value == 100.0
         assert result[0].to_value == 500.0
         assert result[0].rate == 5.0
-        
+
         # Verify second transaction
         assert isinstance(result[1], Transaction)
         assert result[1].transaction_id == 2
@@ -144,7 +150,7 @@ class TestTransactionService:
         assert result[1].from_value == 50.0
         assert result[1].to_value == 55.0
         assert result[1].rate == 1.1
-        
+
         # Verify that the repository was called correctly
         self.mock_transaction_repository.get_by_user_id.assert_called_once_with(user_id)
 
@@ -160,7 +166,7 @@ class TestTransactionService:
         # Assert
         assert result == []
         assert len(result) == 0
-        
+
         # Verify that the repository was called correctly
         self.mock_transaction_repository.get_by_user_id.assert_called_once_with(user_id)
 
@@ -168,15 +174,17 @@ class TestTransactionService:
         """Test erro no repositório when retrieving transações."""
         # Arrange
         user_id = 123
-        self.mock_transaction_repository.get_by_user_id.side_effect = Exception("Database timeout")
+        self.mock_transaction_repository.get_by_user_id.side_effect = Exception(
+            "Database timeout"
+        )
 
         # Act & Assert
         with pytest.raises(ServiceException) as exc_info:
             self.service.get_transactions(user_id)
-        
+
         assert "Error fetching transactions" in str(exc_info.value)
         assert "Database timeout" in str(exc_info.value)
-        
+
         # Verify que o repositório foi chamado
         self.mock_transaction_repository.get_by_user_id.assert_called_once_with(user_id)
 
@@ -192,9 +200,9 @@ class TestTransactionService:
             from_value=75.0,
             to_value=10500.0,
             rate=140.0,
-            timestamp=now
+            timestamp=now,
         )
-        
+
         # Mock simples do repositório
         self.mock_transaction_repository.save.return_value = Mock()
 

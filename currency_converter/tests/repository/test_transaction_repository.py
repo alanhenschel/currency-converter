@@ -1,10 +1,14 @@
 import pytest
-from unittest.mock import Mock, MagicMock
+from unittest.mock import Mock
 from datetime import datetime, timezone
 from sqlalchemy.exc import SQLAlchemyError
 
-from currency_converter.app.infrastructure.repositories.transaction_repository_impl import TransactionRepositoryImpl
-from currency_converter.app.infrastructure.db.models import Transaction as TransactionORM
+from currency_converter.app.infrastructure.repositories.transaction_repository_impl import (
+    TransactionRepositoryImpl,
+)
+from currency_converter.app.infrastructure.db.models import (
+    Transaction as TransactionORM,
+)
 from currency_converter.app.exceptions import DatabaseException
 
 
@@ -27,13 +31,13 @@ class TestTransactionRepository:
             from_value=100.0,
             to_value=500.0,
             rate=5.0,
-            timestamp=now
+            timestamp=now,
         )
-        
+
         # Mock do comportamento do SQLAlchemy
         def mock_refresh(obj):
             obj.id = 1  # Simula o ID gerado após commit
-            
+
         self.mock_db_session.add = Mock()
         self.mock_db_session.commit = Mock()
         self.mock_db_session.refresh = Mock(side_effect=mock_refresh)
@@ -44,7 +48,7 @@ class TestTransactionRepository:
         # Assert
         assert result == transaction
         assert result.id == 1  # ID foi atribuído pelo refresh
-        
+
         # Verifica se os métodos do SQLAlchemy foram chamados na ordem correta
         self.mock_db_session.add.assert_called_once_with(transaction)
         self.mock_db_session.commit.assert_called_once()
@@ -60,9 +64,9 @@ class TestTransactionRepository:
             from_value=100.0,
             to_value=500.0,
             rate=5.0,
-            timestamp=datetime.now(timezone.utc)
+            timestamp=datetime.now(timezone.utc),
         )
-        
+
         # Mock do erro de banco de dados
         self.mock_db_session.add = Mock()
         self.mock_db_session.commit.side_effect = SQLAlchemyError("Connection timeout")
@@ -70,10 +74,10 @@ class TestTransactionRepository:
         # Act & Assert
         with pytest.raises(DatabaseException) as exc_info:
             self.repository.save(transaction)
-        
+
         assert "Error saving transaction" in str(exc_info.value)
         assert "Connection timeout" in str(exc_info.value)
-        
+
         # Verifica que add foi chamado mas commit falhou
         self.mock_db_session.add.assert_called_once_with(transaction)
         self.mock_db_session.commit.assert_called_once()
@@ -84,7 +88,7 @@ class TestTransactionRepository:
         # Arrange
         user_id = 123
         now = datetime.now(timezone.utc)
-        
+
         mock_transactions = [
             TransactionORM(
                 id=1,
@@ -94,7 +98,7 @@ class TestTransactionRepository:
                 from_value=100.0,
                 to_value=500.0,
                 rate=5.0,
-                timestamp=now
+                timestamp=now,
             ),
             TransactionORM(
                 id=2,
@@ -104,10 +108,10 @@ class TestTransactionRepository:
                 from_value=50.0,
                 to_value=55.0,
                 rate=1.1,
-                timestamp=now
-            )
+                timestamp=now,
+            ),
         ]
-        
+
         # Mock do query SQLAlchemy
         mock_query = Mock()
         mock_filter = Mock()
@@ -125,7 +129,7 @@ class TestTransactionRepository:
         assert result[0].user_id == 123
         assert result[1].id == 2
         assert result[1].user_id == 123
-        
+
         # Verifica se a query foi construída corretamente
         self.mock_db_session.query.assert_called_once_with(TransactionORM)
         mock_query.filter.assert_called_once()
@@ -135,7 +139,7 @@ class TestTransactionRepository:
         """Testa busca de transações quando usuário não tem transações."""
         # Arrange
         user_id = 456
-        
+
         # Mock do query SQLAlchemy retornando lista vazia
         mock_query = Mock()
         mock_filter = Mock()
@@ -149,7 +153,7 @@ class TestTransactionRepository:
         # Assert
         assert result == []
         assert len(result) == 0
-        
+
         # Verifica se a query foi construída corretamente
         self.mock_db_session.query.assert_called_once_with(TransactionORM)
         mock_query.filter.assert_called_once()
@@ -159,7 +163,7 @@ class TestTransactionRepository:
         """Testa erro de banco de dados ao buscar transações."""
         # Arrange
         user_id = 123
-        
+
         # Mock do erro de banco de dados
         mock_query = Mock()
         mock_filter = Mock()
@@ -170,10 +174,10 @@ class TestTransactionRepository:
         # Act & Assert
         with pytest.raises(DatabaseException) as exc_info:
             self.repository.get_by_user_id(user_id)
-        
+
         assert "Error fetching transactions for user 123" in str(exc_info.value)
         assert "Table does not exist" in str(exc_info.value)
-        
+
         # Verifica que a query foi tentada
         self.mock_db_session.query.assert_called_once_with(TransactionORM)
         mock_query.filter.assert_called_once()
@@ -189,16 +193,16 @@ class TestTransactionRepository:
             from_value=100.0,
             to_value=500.0,
             rate=5.0,
-            timestamp=datetime.now(timezone.utc)
+            timestamp=datetime.now(timezone.utc),
         )
-        
+
         # Mock de exceção genérica
         self.mock_db_session.add.side_effect = Exception("Generic database error")
 
         # Act & Assert
         with pytest.raises(DatabaseException) as exc_info:
             self.repository.save(transaction)
-        
+
         assert "Error saving transaction" in str(exc_info.value)
         assert "Generic database error" in str(exc_info.value)
 
@@ -206,14 +210,14 @@ class TestTransactionRepository:
         """Testa tratamento de exceção genérica ao buscar."""
         # Arrange
         user_id = 123
-        
+
         # Mock de exceção genérica
         self.mock_db_session.query.side_effect = Exception("Generic query error")
 
         # Act & Assert
         with pytest.raises(DatabaseException) as exc_info:
             self.repository.get_by_user_id(user_id)
-        
+
         assert "Error fetching transactions for user 123" in str(exc_info.value)
         assert "Generic query error" in str(exc_info.value)
 
@@ -224,13 +228,13 @@ class TestTransactionRepository:
         transaction = TransactionORM(
             user_id=789,
             from_currency="GBP",
-            to_currency="JPY", 
+            to_currency="JPY",
             from_value=200.0,
             to_value=28000.0,
             rate=140.0,
-            timestamp=now
+            timestamp=now,
         )
-        
+
         # Mock simples do SQLAlchemy
         self.mock_db_session.add = Mock()
         self.mock_db_session.commit = Mock()

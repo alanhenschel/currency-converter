@@ -115,4 +115,37 @@
 - **AWS CodeCommit**: Alternative to GitHub for AWS-native development
 - **AWS CodeBuild**: Managed build service for CI/CD pipelines
 - **AWS CodeDeploy**: Automated deployment service with blue/green deployments
-- **AWS CodePipeline**: End-to-end CI/CD pipeline managementisions and Observations
+- **AWS CodePipeline**: End-to-end CI/CD pipeline management
+
+## Summary of Key AWS Improvements
+
+### 🔄 Architecture Evolution - Separated Frontend & Backend
+
+**Current**: Monolithic deployment (Frontend + Backend on same EC2)
+**Future**: Separated architecture for better scalability
+
+- **Frontend**: AWS S3 + CloudFront (static hosting with global CDN)
+- **Backend**: AWS Elastic Beanstalk or ECS Fargate (auto-scaling containers)
+- **Database**: AWS RDS PostgreSQL (managed database with automated backups)
+
+### 🚀 Main AWS Services for Migration
+
+1. **AWS RDS**: Replace Docker PostgreSQL with managed database
+2. **AWS Elastic Beanstalk**: Deploy FastAPI with auto-scaling and load balancing
+3. **AWS S3 + CloudFront**: Host React frontend globally with CDN
+4. **AWS Secrets Manager**: Secure API keys and database credentials
+5. **AWS CloudWatch**: Application monitoring and logging
+
+### 💡 Alternative Deployment Options
+
+- **AWS Lambda + Mangum**: Serverless FastAPI (pay-per-request)
+- **AWS App Runner**: Simple container deployment with auto-scaling
+- **AWS ECS**: Advanced container orchestration with Fargate
+
+### 🔒 Security & Monitoring
+
+- **AWS WAF**: Web application firewall for API protection
+- **AWS X-Ray**: Distributed tracing for performance analysis
+- **AWS IAM**: Fine-grained access control for all resources
+
+This migration would provide better scalability, reliability, and cost optimization while maintaining the current functionality.

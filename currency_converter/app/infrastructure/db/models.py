@@ -4,8 +4,9 @@ from datetime import datetime
 
 Base = declarative_base()
 
+
 class Transaction(Base):
-    __tablename__ = 'transactions'
+    __tablename__ = "transactions"
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, nullable=False)

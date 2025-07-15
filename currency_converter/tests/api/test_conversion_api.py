@@ -1,15 +1,13 @@
-import pytest
 from unittest.mock import Mock
 from fastapi.testclient import TestClient
 from datetime import datetime, timezone
 
 from currency_converter.app.main import app
-from currency_converter.app.schemas.conversion import ConversionRequest
 from currency_converter.app.domain.models.transaction import Transaction
 from currency_converter.app.exceptions import (
-    ConversionErrorException, 
-    CurrencyNotFoundException, 
-    ValidationServiceException
+    ConversionErrorException,
+    CurrencyNotFoundException,
+    ValidationServiceException,
 )
 from currency_converter.app.api.dependencies import get_conversion_service
 
@@ -27,11 +25,11 @@ class TestConversionAPI:
             transaction_id=1,
             user_id=123,
             from_currency="USD",
-            to_currency="BRL", 
+            to_currency="BRL",
             from_value=100.0,
             to_value=500.0,
             rate=5.0,
-            timestamp=datetime.now(timezone.utc)
+            timestamp=datetime.now(timezone.utc),
         )
         mock_service.convert.return_value = mock_transaction
 
@@ -42,7 +40,7 @@ class TestConversionAPI:
             # Act
             response = client.post(
                 "/api/v1/conversion",
-                json={"from_currency": "USD", "to_currency": "BRL", "amount": 100}
+                json={"from_currency": "USD", "to_currency": "BRL", "amount": 100},
             )
 
             # Assert
@@ -55,7 +53,7 @@ class TestConversionAPI:
             assert data["rate"] == 5.0
             assert data["transaction_id"] == 1
             assert "timestamp" in data
-            
+
             # Verify that the service was called correctly
             mock_service.convert.assert_called_once()
             call_args = mock_service.convert.call_args[0][0]
@@ -70,7 +68,9 @@ class TestConversionAPI:
         """Test service validation exception."""
         # Arrange
         mock_service = Mock()
-        mock_service.convert.side_effect = ValidationServiceException("Amount must be greater than zero")
+        mock_service.convert.side_effect = ValidationServiceException(
+            "Amount must be greater than zero"
+        )
 
         # Override dependency
         app.dependency_overrides[get_conversion_service] = lambda: mock_service
@@ -79,7 +79,12 @@ class TestConversionAPI:
             # Act
             response = client.post(
                 "/api/v1/conversion",
-                json={"from_currency": "USD", "to_currency": "BRL", "amount": -10}
+                json={
+                    "from_currency": "USD",
+                    "to_currency": "BRL",
+                    "amount": -10,
+                    "userId": 123,
+                },
             )
 
             # Assert
@@ -93,7 +98,9 @@ class TestConversionAPI:
         """Test currency not found exception."""
         # Arrange
         mock_service = Mock()
-        mock_service.convert.side_effect = CurrencyNotFoundException("Currency XYZ not found")
+        mock_service.convert.side_effect = CurrencyNotFoundException(
+            "Currency XYZ not found"
+        )
 
         # Override dependency
         app.dependency_overrides[get_conversion_service] = lambda: mock_service
@@ -102,7 +109,7 @@ class TestConversionAPI:
             # Act
             response = client.post(
                 "/api/v1/conversion",
-                json={"from_currency": "XYZ", "to_currency": "BRL", "amount": 100}
+                json={"from_currency": "XYZ", "to_currency": "BRL", "amount": 100},
             )
 
             # Assert
@@ -116,7 +123,9 @@ class TestConversionAPI:
         """Test error during conversion."""
         # Arrange
         mock_service = Mock()
-        mock_service.convert.side_effect = ConversionErrorException("API rate limit exceeded")
+        mock_service.convert.side_effect = ConversionErrorException(
+            "API rate limit exceeded"
+        )
 
         # Override dependency
         app.dependency_overrides[get_conversion_service] = lambda: mock_service
@@ -125,7 +134,7 @@ class TestConversionAPI:
             # Act
             response = client.post(
                 "/api/v1/conversion",
-                json={"from_currency": "USD", "to_currency": "BRL", "amount": 100}
+                json={"from_currency": "USD", "to_currency": "BRL", "amount": 100},
             )
 
             # Assert
@@ -148,7 +157,7 @@ class TestConversionAPI:
             # Act
             response = client.post(
                 "/api/v1/conversion",
-                json={"from_currency": "USD", "to_currency": "BRL", "amount": 100}
+                json={"from_currency": "USD", "to_currency": "BRL", "amount": 100},
             )
 
             # Assert
@@ -163,7 +172,7 @@ class TestConversionAPI:
         # Act
         response = client.post(
             "/api/v1/conversion",
-            json={"from_currency": "USD", "amount": 100}  # Missing to_currency
+            json={"from_currency": "USD", "amount": 100},  # Missing to_currency
         )
 
         # Assert
@@ -175,7 +184,7 @@ class TestConversionAPI:
         # Act
         response = client.post(
             "/api/v1/conversion",
-            json={"from_currency": "USD", "to_currency": "BRL", "amount": "invalid"}
+            json={"from_currency": "USD", "to_currency": "BRL", "amount": "invalid"},
         )
 
         # Assert
@@ -186,7 +195,9 @@ class TestConversionAPI:
         """Test validation of invalid amount value that should be rejected by service."""
         # Arrange
         mock_service = Mock()
-        mock_service.convert.side_effect = ValidationServiceException("Amount must be greater than zero")
+        mock_service.convert.side_effect = ValidationServiceException(
+            "Amount must be greater than zero"
+        )
 
         # Override dependency
         app.dependency_overrides[get_conversion_service] = lambda: mock_service
@@ -194,8 +205,13 @@ class TestConversionAPI:
         try:
             # Act
             response = client.post(
-                "/api/v1/conversion", 
-                json={"from_currency": "USD", "to_currency": "BRL", "amount": 0}
+                "/api/v1/conversion",
+                json={
+                    "from_currency": "USD",
+                    "to_currency": "BRL",
+                    "amount": 0,
+                    "userId": 123,
+                },
             )
 
             # Assert

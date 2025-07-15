@@ -4,7 +4,10 @@ from ...core.config import settings
 
 engine = create_engine(settings.database_url)
 
-SessionLocal = scoped_session(sessionmaker(autocommit=False, autoflush=False, bind=engine))
+SessionLocal = scoped_session(
+    sessionmaker(autocommit=False, autoflush=False, bind=engine)
+)
+
 
 def get_db():
     db = SessionLocal()

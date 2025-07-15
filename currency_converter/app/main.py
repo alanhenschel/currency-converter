@@ -5,9 +5,17 @@ from .api.middlewares import add_middleware
 app = FastAPI(title="Currency Converter API", version="1.0")
 
 app.include_router(conversion.router, prefix="/api/v1/conversion", tags=["Conversion"])
-app.include_router(transactions.router, prefix="/api/v1/transactions", tags=["Transactions"])
+app.include_router(
+    transactions.router, prefix="/api/v1/transactions", tags=["Transactions"]
+)
 
 add_middleware(app)
+
+
+@app.get("/health")
+def health_check():
+    return {"status": "healthy", "service": "currency-converter-api"}
+
 
 @app.get("/")
 def read_root():

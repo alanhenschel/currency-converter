@@ -1,16 +1,23 @@
-
 from loguru import logger
 from fastapi import APIRouter, HTTPException, Depends
 
-from currency_converter.app.exceptions import TransactionNotFoundException, TransactionServiceException, ServiceException
+from currency_converter.app.exceptions import (
+    TransactionNotFoundException,
+    TransactionServiceException,
+    ServiceException,
+)
 from ...domain.services.transaction_service import TransactionService
 from ...schemas.transaction import TransactionResponse
 from ...api.dependencies import get_transaction_service
 
 router = APIRouter()
 
+
 @router.get("/", response_model=list[TransactionResponse])
-async def get_transactions(userId: int, transaction_service: TransactionService = Depends(get_transaction_service)):
+async def get_transactions(
+    userId: int,
+    transaction_service: TransactionService = Depends(get_transaction_service),
+):
     try:
         transactions = transaction_service.get_transactions(userId)
         return transactions  # Return empty list if no transactions

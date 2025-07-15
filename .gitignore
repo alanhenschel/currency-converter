@@ -66,3 +66,28 @@ build/
 dist/
 *.egg-info/
 .eggs/
+
+# Frontend/React/Node.js
+frontend/node_modules/
+frontend/build/
+frontend/dist/
+frontend/coverage/
+frontend/.env
+frontend/.env.local
+frontend/.env.development.local
+frontend/.env.test.local
+frontend/.env.production.local
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
+frontend/.eslintcache
+frontend/.stylelintcache
+frontend/*.tsbuildinfo
+
+# Cypress (E2E testing)
+frontend/cypress/screenshots/
+frontend/cypress/videos/
+frontend/cypress/downloads/
+
+# Storybook
+frontend/storybook-static/

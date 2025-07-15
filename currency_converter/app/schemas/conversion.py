@@ -2,11 +2,13 @@ from datetime import datetime
 from pydantic import BaseModel
 from typing import Optional
 
+
 class ConversionRequest(BaseModel):
     from_currency: str
     to_currency: str
     amount: float
-    
+
+
 class ConversionResponse(BaseModel):
     transaction_id: Optional[int]
     from_currency: str

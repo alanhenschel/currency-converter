@@ -1,18 +1,23 @@
-
 from loguru import logger
 from fastapi import APIRouter, HTTPException, Depends
 
-from currency_converter.app.exceptions import ConversionErrorException, CurrencyConverterException, CurrencyNotFoundException, ValidationServiceException
+from currency_converter.app.exceptions import (
+    ConversionErrorException,
+    CurrencyConverterException,
+    CurrencyNotFoundException,
+    ValidationServiceException,
+)
 from ...schemas.conversion import ConversionRequest, ConversionResponse
 from ...domain.services.conversion_service import ConversionService
 from ...api.dependencies import get_conversion_service
 
 router = APIRouter()
 
+
 @router.post("", response_model=ConversionResponse)
 async def convert_currency(
     conversion_request: ConversionRequest,
-    conversion_service: ConversionService = Depends(get_conversion_service)
+    conversion_service: ConversionService = Depends(get_conversion_service),
 ):
     try:
         transaction = conversion_service.convert(conversion_request)
@@ -23,7 +28,7 @@ async def convert_currency(
             from_value=transaction.from_value,
             to_value=transaction.to_value,
             rate=transaction.rate,
-            timestamp=transaction.timestamp
+            timestamp=transaction.timestamp,
         )
         return response
     except ValueError as e:

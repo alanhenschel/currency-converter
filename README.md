@@ -1,6 +1,6 @@
 # 💸 Currency Converter
 
-A complete currency conversion application with FastAPI backend and React TypeScript frontend, featuring automated CI/CD pipeline and AWS deployment.
+A complete currency conversion application with FastAPI backend and React TypeScript frontend, featuring automated CI/CD pipeline and AWS deployment. For this project de userId is mock as "123", a feature for the future would be get from a JWT token/autehtication feature
 
 ## 📋 Requirements
 
@@ -452,7 +452,7 @@ Content-Type: application/json
 #### Transaction History
 ```bash
 # Get user transactions
-GET /api/v1/transactions/?userId=1
+GET /api/v1/transactions/?userId=123
 
 ```
 

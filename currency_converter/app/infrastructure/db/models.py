@@ -1,11 +1,12 @@
 from sqlalchemy import Column, Integer, String, Float, DateTime
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import declarative_base
 from datetime import datetime
 
 Base = declarative_base()
 
+
 class Transaction(Base):
-    __tablename__ = 'transactions'
+    __tablename__ = "transactions"
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, nullable=False)
@@ -15,9 +16,3 @@ class Transaction(Base):
     to_value = Column(Float, nullable=False)
     rate = Column(Float, nullable=False)
     timestamp = Column(DateTime, default=datetime.utcnow)
-
-class Currency(Base):
-    __tablename__ = 'currencies'
-
-    code = Column(String(3), primary_key=True, index=True)
-    name = Column(String, nullable=False)
